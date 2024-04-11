@@ -1,1 +1,1 @@
-This project is about using node and express to set up http routing.
+This project is about using mongodb, node and express.
