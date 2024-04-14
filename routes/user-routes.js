@@ -1,27 +1,26 @@
-const users = require("../data/users");
+const User = require("../models/user");
 
 const express = require("express");
 const router = express.Router();
 
 router
-  .get("/", (req, res) => {
-    res.json(users);
+  .get("/", async (req, res) => {
+    res.json(await User.find({}));
   })
-  .post("/", (req, res, next) => {
+  .post("/", async (req, res, next) => {
     try {
       if (req.body.name && req.body.username && req.body.email) {
-        if (users.find((user) => user.username == req.body.username)) {
+        if ((await User.find({ username: req.body.username })).length != 0) {
           throw new Error("Username already exists.");
         } else {
-          const newUser = {
-            id: users.length + 1,
+          const newUser = new User({
+            id: (await User.countDocuments({})) + 1,
             name: req.body.name,
             username: req.body.username,
             email: req.body.email,
-          };
+          });
 
-          users.push(newUser);
-          res.json(newUser);
+          res.json(await newUser.save());
         }
       } else {
         throw new Error("Insufficient data.");
@@ -30,11 +29,11 @@ router
       next(error);
     }
   })
-  .get("/:id", (req, res, next) => {
+  .get("/:id", async (req, res, next) => {
     try {
-      const user = users.find((user) => user.id == req.params.id);
+      const user = await User.find({ id: req.params.id });
 
-      if (user) {
+      if (user.length != 0) {
         res.json(user);
       } else {
         throw new Error("User does not exist.");

@@ -1,26 +1,25 @@
-const posts = require("../data/posts");
-const users = require("../data/users");
+const Post = require("../models/post");
+const User = require("../models/user");
 
 const express = require("express");
 const router = express.Router();
 
 router
-  .get("/", (req, res) => {
-    res.json(posts);
+  .get("/", async (req, res) => {
+    res.json(await Post.find({}));
   })
-  .post("/", (req, res, next) => {
+  .post("/", async (req, res, next) => {
     try {
       if (req.body.userId && req.body.title && req.body.body) {
-        if (users.find((user) => user.id == req.body.userId)) {
-          const newPost = {
+        if ((await User.find({ id: req.body.userId })).length != 0) {
+          const newPost = new Post({
             userId: req.body.userId,
-            id: posts.length - 1,
+            id: (await Post.countDocuments({})) + 1,
             title: req.body.title,
             body: req.body.body,
-          };
+          });
 
-          posts.push(newPost);
-          res.json(newPost);
+          res.json(await newPost.save());
         } else {
           throw new Error("User does not exist.");
         }
@@ -31,11 +30,11 @@ router
       next(error);
     }
   })
-  .get("/:id", (req, res, next) => {
+  .get("/:id", async (req, res, next) => {
     try {
-      const post = posts.find((post) => post.id == req.params.id);
+      const post = await Post.find({ id: req.params.id });
 
-      if (post) {
+      if (post.length != 0) {
         res.json(post);
       } else {
         throw new Error("Post does not exist.");
@@ -44,11 +43,11 @@ router
       next(error);
     }
   })
-  .get("/user/:id", (req, res, next) => {
+  .get("/user/:id", async (req, res, next) => {
     try {
-      const userPosts = posts.filter((post) => post.userId == req.params.id);
+      const userPosts = await Post.find({ userId: req.params.id });
 
-      if (userPosts) {
+      if (userPosts != 0) {
         res.json(userPosts);
       } else {
         throw new Error("User does not exist.");

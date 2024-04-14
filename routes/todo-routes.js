@@ -1,26 +1,25 @@
-const todos = require("../data/todos");
-const users = require("../data/users");
+const Todo = require("../models/todo");
+const User = require("../models/user");
 
 const express = require("express");
 const router = express.Router();
 
 router
-  .get("/", (req, res) => {
-    res.json(todos);
+  .get("/", async (req, res) => {
+    res.json(await Todo.find({}));
   })
-  .post("/", (req, res, next) => {
+  .post("/", async (req, res, next) => {
     try {
       if (req.body.userId && req.body.title) {
-        if (users.find((user) => user.id == req.body.userId)) {
-          const newTodo = {
+        if ((await User.find({ id: req.body.userId })).length != 0) {
+          const newTodo = new Todo({
             userId: req.body.userId,
-            id: todos.length - 1,
+            id: (await Todo.countDocuments({})) + 1,
             title: req.body.title,
             completed: false,
-          };
+          });
 
-          todos.push(newTodo);
-          res.json(newTodo);
+          res.json(await newTodo.save());
         } else {
           throw new Error("User does not exist.");
         }
@@ -31,11 +30,11 @@ router
       next(error);
     }
   })
-  .get("/:id", (req, res, next) => {
+  .get("/:id", async (req, res, next) => {
     try {
-      const todo = todos.find((todo) => todo.id == req.params.id);
+      const todo = await Todo.find({ id: req.params.id });
 
-      if (todo) {
+      if (todo.length != 0) {
         res.json(todo);
       } else {
         throw new Error("Todo does not exist.");
@@ -44,11 +43,11 @@ router
       next(error);
     }
   })
-  .get("/user/:id", (req, res, next) => {
+  .get("/user/:id", async (req, res, next) => {
     try {
-      const userTodos = todos.filter((todo) => todo.userId == req.params.id);
+      const userTodos = await Todo.find({ userId: req.params.id });
 
-      if (userTodos) {
+      if (userTodos.length != 0) {
         res.json(userTodos);
       } else {
         throw new Error("User does not exist.");
